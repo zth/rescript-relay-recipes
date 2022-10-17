@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+__generated__/
+*.bs.js
+lib/
+.bsb.lock
+.merlin

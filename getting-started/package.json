@@ -1,0 +1,35 @@
+{
+  "name": "barebones-app",
+  "version": "0.0.1",
+  "scripts": {
+    "rescript:build": "rescript",
+    "rescript:clean": "rescript clean -with-deps",
+    "rescript:watch": "rescript build -w",
+    "relay:watch": "rescript-relay-compiler -w",
+    "webpack:watch": "webpack-dev-server",
+    "watch": "concurrently \"yarn relay:watch\" \"yarn rescript:watch\" \"yarn webpack:watch\"",
+    "get-schema": "npx get-graphql-schema http://localhost:4000/graphql > schema.graphql"
+  },
+  "keywords": [
+    "rescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@rescript/react": "^0.10.3",
+    "bs-fetch": "^0.6.2",
+    "concurrently": "^7.4.0",
+    "react": "18",
+    "react-dom": "18",
+    "react-relay": "14.1.0",
+    "relay-runtime": "14.1.0",
+    "rescript": "^10.0.1",
+    "rescript-relay": "^1.0.1"
+  },
+  "devDependencies": {
+    "html-webpack-plugin": "^5.5.0",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.11.1"
+  }
+}
