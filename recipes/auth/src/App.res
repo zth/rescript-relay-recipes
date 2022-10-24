@@ -19,8 +19,8 @@ module WithoutLoader = {
 }
 
 module LoginMutation = %relay(`
-  mutation AppLoginMutation {
-    login(userId: 5, password: 5) {
+  mutation AppLoginMutation($email: String!, $password: String!) {
+    login(email: $email, password: $password) {
       ... on LoggedIn {
         __typename
       }
@@ -33,9 +33,16 @@ module LoginMutation = %relay(`
 
 @react.component
 let make = () => {
+  let (login, loading) = LoginMutation.use()
+
   <div>
     <React.Suspense fallback={"Loading..."->React.string}>
       <WithoutLoader />
     </React.Suspense>
+    <button
+      disabled=loading
+      onClick={_ => login(~variables={email: "my@email.com", password: "myPassword"}, ())->ignore}>
+      {"Log in"->React.string}
+    </button>
   </div>
 }
