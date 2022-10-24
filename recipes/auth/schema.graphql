@@ -1,0 +1,59 @@
+"""Exposes a URL that specifies the behavior of this scalar."""
+directive @specifiedBy(
+  """The URL that specifies the behavior of this scalar."""
+  url: String!
+) on SCALAR
+
+"""A counter with a label and count"""
+type Counter implements Node {
+  count: Int
+  id: ID!
+  label: String
+}
+
+type LoggedIn {
+  accessToken: String
+  refreshToken: String
+}
+
+type LogInError {
+  message: String
+}
+
+union LogInResponse = LogInError | LoggedIn
+
+type Mutation {
+  decrementCount(id: ID!): Counter
+  incrementCount(id: ID!): Counter
+  login(password: Int!, userId: Int!): LogInResponse
+}
+
+interface Node {
+  id: ID!
+}
+
+type PageInfo {
+  endCursor: ID
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: ID
+}
+
+type Query {
+  counters(after: ID, before: ID, first: Int, last: Int): QueryCountersConnection
+  defaultCounter: Counter
+  me: Int
+  node(id: ID!): Node
+  nodes(ids: [ID!]!): [Node]!
+}
+
+type QueryCountersConnection {
+  edges: [QueryCountersConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+type QueryCountersConnectionEdge {
+  cursor: ID!
+  node: Counter!
+}
+
