@@ -15,7 +15,7 @@ let executeRequest = (operationText, operationVariables) => {
     ->Js.Json.stringify
     ->BodyInit.make
 
-  let request = RequestInit.make(~method_=Post, ~headers, ~body, ())
+  let request = RequestInit.make(~method_=Post, ~headers, ~body, ~credentials=Include, ())
 
   fetchWithInit("http://localhost:4000/graphql", request) |> Js.Promise.then_(response =>
     if Response.ok(response) {
