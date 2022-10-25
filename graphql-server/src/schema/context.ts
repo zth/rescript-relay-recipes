@@ -1,17 +1,17 @@
 import { IncomingMessage, ServerResponse } from 'http'
-import { getSessionAndRefreshTokens, Session } from './auth'
+import { getSessionAndRefreshTokens, ISession } from './auth'
 import { PrismaClient } from '@prisma/client'
 
 export type Context = {
   req: IncomingMessage
   res: ServerResponse
-  session: Session
+  session: ISession
   prisma: PrismaClient
 }
 
 const prisma = new PrismaClient()
 
-export const makeContext = ({
+export const contextFactory = ({
   req,
   res,
 }: {

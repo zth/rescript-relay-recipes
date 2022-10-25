@@ -1,11 +1,10 @@
 import { createServer } from '@graphql-yoga/node'
-import { schema } from './schema'
-import { Context, makeContext } from './context'
+import { schema, contextFactory } from './schema'
 
 const main = async () => {
   const server = createServer({
     schema,
-    context: async ({ req, res }): Promise<Context> => makeContext({ req, res }),
+    context: contextFactory,
   })
 
   await server.start()
