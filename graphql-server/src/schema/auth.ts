@@ -14,7 +14,11 @@ declare module 'jsonwebtoken' {
   }
 }
 
-const generateCookies = async (userId: string, prisma: PrismaClient) => {
+const generateTokensAndSetCookies = async (
+  userId: string,
+  res: ServerResponse,
+  prisma: PrismaClient
+) => {
   const accessToken = sign(
     {
       userId,
@@ -39,6 +43,8 @@ const generateCookies = async (userId: string, prisma: PrismaClient) => {
     { expiresIn: '7d' }
   )
 
+  res.setHeader('Set-Cookie', [`accessToken=${accessToken}`, `refreshToken=${refreshToken}`])
+
   return { accessToken, refreshToken }
 }
 
@@ -50,8 +56,7 @@ export const register = async (
 ) => {
   const user = await prisma.user.create({ data: { email, password } })
 
-  const { accessToken, refreshToken } = await generateCookies(user.id, prisma)
-  res.setHeader('Set-Cookie', [`accessToken=${accessToken}`, `refreshToken=${refreshToken}`])
+  await generateTokensAndSetCookies(user.id, res, prisma)
 
   return user
 }
@@ -68,8 +73,7 @@ export const authenticate = async (
     throw new Error('Not found')
   }
 
-  const { accessToken, refreshToken } = await generateCookies(user.id, prisma)
-  res.setHeader('Set-Cookie', [`accessToken=${accessToken}`, `refreshToken=${refreshToken}`])
+  await generateTokensAndSetCookies(user.id, res, prisma)
 
   return user
 }
@@ -124,12 +128,7 @@ export const getSessionAndRefreshTokens = async (
           const user = await prisma.user.findUniqueOrThrow({ where: { id: payload.userId } })
 
           if (payload.refreshTokenKey && payload.refreshTokenKey === user.refreshTokenKey) {
-            const { accessToken, refreshToken } = await generateCookies(payload.userId, prisma)
-
-            res.setHeader('Set-Cookie', [
-              `accessToken=${accessToken}`,
-              `refreshToken=${refreshToken}`,
-            ])
+            await generateTokensAndSetCookies(payload.userId, res, prisma)
           }
         }
       } catch {}
