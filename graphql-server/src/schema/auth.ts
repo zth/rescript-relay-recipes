@@ -1,6 +1,7 @@
 import { verify, sign, Secret, JwtPayload } from 'jsonwebtoken'
 import { IncomingMessage, ServerResponse } from 'http'
 import { PrismaClient } from '@prisma/client'
+import { v4 as uuidv4 } from 'uuid'
 import { builder } from './builder'
 
 const ACCESS_TOKEN_SECRET: Secret = 'whatever'
@@ -9,10 +10,11 @@ const REFRESH_TOKEN_SECRET: Secret = 'whateverelse'
 declare module 'jsonwebtoken' {
   export interface JwtPayload {
     userId: string
+    refreshTokenKey?: string
   }
 }
 
-const generateCookies = (userId: string) => {
+const generateCookies = async (userId: string, prisma: PrismaClient) => {
   const accessToken = sign(
     {
       userId,
@@ -21,9 +23,17 @@ const generateCookies = (userId: string) => {
     { expiresIn: '5m' }
   )
 
+  const refreshTokenKey = uuidv4()
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { refreshTokenKey },
+  })
+
   const refreshToken = sign(
     {
       userId,
+      refreshTokenKey: user.refreshTokenKey,
     },
     REFRESH_TOKEN_SECRET,
     { expiresIn: '7d' }
@@ -40,7 +50,7 @@ export const register = async (
 ) => {
   const user = await prisma.user.create({ data: { email, password } })
 
-  const { accessToken, refreshToken } = generateCookies(user.id)
+  const { accessToken, refreshToken } = await generateCookies(user.id, prisma)
   res.setHeader('Set-Cookie', [`accessToken=${accessToken}`, `refreshToken=${refreshToken}`])
 
   return user
@@ -58,7 +68,7 @@ export const authenticate = async (
     throw new Error('Not found')
   }
 
-  const { accessToken, refreshToken } = generateCookies(user.id)
+  const { accessToken, refreshToken } = await generateCookies(user.id, prisma)
   res.setHeader('Set-Cookie', [`accessToken=${accessToken}`, `refreshToken=${refreshToken}`])
 
   return user
@@ -93,42 +103,42 @@ type ISessionNotLoggedIn = {
 
 export type ISession = ISessionLoggedIn | ISessionNotLoggedIn
 
-export const getSessionAndRefreshTokens = (req: IncomingMessage, res: ServerResponse): ISession => {
+export const getSessionAndRefreshTokens = async (
+  req: IncomingMessage,
+  res: ServerResponse,
+  prisma: PrismaClient
+): Promise<ISession> => {
   const cookies = parseAuthCookies(req.headers.cookie)
-
-  let payload: JwtPayload | null = null
 
   if (cookies.accessToken) {
     try {
       const result = verify(cookies.accessToken, ACCESS_TOKEN_SECRET, { complete: true })
+      const payload = result.payload as JwtPayload
 
-      if (result) {
-        payload = result.payload as JwtPayload
-      }
-    } catch {
-      if (cookies.refreshToken) {
-        const result = verify(cookies.refreshToken, REFRESH_TOKEN_SECRET, { complete: true })
-        // TODO Verify that the refresh token has not been revoked
-        const payload_ = result.payload as JwtPayload
+      return { type: 'LoggedIn', userId: payload.userId }
+    } catch (e) {
+      try {
+        if (cookies.refreshToken) {
+          const result = verify(cookies.refreshToken, REFRESH_TOKEN_SECRET, { complete: true })
+          const payload = result.payload as JwtPayload
+          const user = await prisma.user.findUniqueOrThrow({ where: { id: payload.userId } })
 
-        const { accessToken, refreshToken } = generateCookies(payload_.userId)
-        res.setHeader('Set-Cookie', [`accessToken=${accessToken}`, `refreshToken=${refreshToken}`])
+          if (payload.refreshTokenKey && payload.refreshTokenKey === user.refreshTokenKey) {
+            const { accessToken, refreshToken } = await generateCookies(payload.userId, prisma)
 
-        if (result) {
-          payload = result.payload as JwtPayload
+            res.setHeader('Set-Cookie', [
+              `accessToken=${accessToken}`,
+              `refreshToken=${refreshToken}`,
+            ])
+          }
         }
-      }
+      } catch {}
     }
   }
 
-  return payload
-    ? {
-        type: 'LoggedIn',
-        userId: payload.userId,
-      }
-    : {
-        type: 'NotLoggedIn',
-      }
+  return {
+    type: 'NotLoggedIn',
+  }
 }
 
 type IUser = {

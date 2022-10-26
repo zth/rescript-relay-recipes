@@ -11,14 +11,14 @@ export type Context = {
 
 const prisma = new PrismaClient()
 
-export const contextFactory = ({
+export const contextFactory = async ({
   req,
   res,
 }: {
   req: IncomingMessage
   res: ServerResponse
-}): Context => {
-  const session = getSessionAndRefreshTokens(req, res)
+}): Promise<Context> => {
+  const session = await getSessionAndRefreshTokens(req, res, prisma)
 
   return {
     req,
