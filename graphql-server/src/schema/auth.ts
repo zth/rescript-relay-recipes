@@ -262,3 +262,42 @@ builder.mutationField('login', t =>
     },
   })
 )
+
+type ILoggedOut = {
+  type: 'LoggedOut'
+  message: string
+}
+
+const LoggedOut = builder.objectRef<ILoggedOut>('LoggedOut')
+LoggedOut.implement({
+  fields: t => ({ message: t.exposeString('message') }),
+})
+
+builder.mutationField('logout', t =>
+  t.field({
+    type: LoggedOut,
+    resolve: async (_, _args, { res, prisma, session }) => {
+      if (session.type === 'NotLoggedIn') {
+        return {
+          type: 'LoggedOut',
+          message: 'Already logged out',
+        } as ILoggedOut
+      }
+
+      await prisma.user.update({
+        where: { id: session.userId },
+        data: { refreshTokenKey: null },
+      })
+
+      res.setHeader('Set-Cookie', [
+        `accessToken=""; expires=Thu, Jan 01 1970 00:00:00 UTC`,
+        `refreshToken=""; expires=Thu, Jan 01 1970 00:00:00 UTC`,
+      ])
+
+      return {
+        type: 'LoggedOut',
+        message: 'Logged out',
+      } as ILoggedOut
+    },
+  })
+)
