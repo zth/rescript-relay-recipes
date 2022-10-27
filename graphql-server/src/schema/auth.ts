@@ -1,6 +1,6 @@
 import { verify, sign, Secret, JwtPayload } from 'jsonwebtoken'
 import { IncomingMessage, ServerResponse } from 'http'
-import { PrismaClient } from '@prisma/client'
+import Prisma, { PrismaClient } from '@prisma/client'
 import { v4 as uuidv4 } from 'uuid'
 import { builder } from './builder'
 
@@ -96,16 +96,41 @@ const parseAuthCookies = (cookies: string | undefined) => {
   }
 }
 
-type ISessionLoggedIn = {
+const User = builder.node(builder.objectRef<Prisma.User>('User'), {
+  id: {
+    resolve: ({ id }) => id,
+  },
+  fields: t => ({
+    email: t.exposeString('email'),
+  }),
+  loadMany: async (ids, { prisma }) => prisma.user.findMany({ where: { id: { in: ids } } }),
+})
+
+type ILoggedIn = {
   type: 'LoggedIn'
   userId: string
 }
 
-type ISessionNotLoggedIn = {
-  type: 'NotLoggedIn'
+const LoggedIn = builder.objectRef<ILoggedIn>('LoggedIn')
+LoggedIn.implement({
+  fields: t => ({
+    user: t.field({
+      type: User,
+      resolve: ({ userId }, _, { prisma }) => prisma.user.findUnique({ where: { id: userId } }),
+    }),
+  }),
+})
+
+type IUnauthorized = {
+  type: 'Unauthorized'
 }
 
-export type ISession = ISessionLoggedIn | ISessionNotLoggedIn
+const Unauthorized = builder.objectRef<IUnauthorized>('Unauthorized')
+Unauthorized.implement({
+  fields: t => ({ message: t.string({ resolve: () => 'User is not authorized' }) }),
+})
+
+export type ISession = ILoggedIn | IUnauthorized
 
 export const getSessionAndRefreshTokens = async (
   req: IncomingMessage,
@@ -136,36 +161,33 @@ export const getSessionAndRefreshTokens = async (
   }
 
   return {
-    type: 'NotLoggedIn',
+    type: 'Unauthorized',
   }
 }
 
-type IUser = {
-  type: 'User'
-  userId: string
-}
-
-const User = builder.objectRef<IUser>('User').implement({
-  fields: t => ({
-    userId: t.exposeString('userId'),
-  }),
+const Session = builder.unionType('Session', {
+  types: [LoggedIn, Unauthorized],
+  resolveType: ({ type }) => {
+    switch (type) {
+      case 'LoggedIn':
+        return LoggedIn
+      case 'Unauthorized':
+        return Unauthorized
+    }
+  },
 })
 
-type ILoggedIn = {
-  type: 'LoggedIn'
-  user: IUser
-}
-
-const LoggedIn = builder.objectRef<ILoggedIn>('LoggedIn')
-LoggedIn.implement({
-  fields: t => ({ user: t.expose('user', { type: User }) }),
-})
+builder.queryField('session', t =>
+  t.field({
+    type: Session,
+    resolve: (_, _args, { session }) => session,
+  })
+)
 
 type ILogInError = {
   type: 'LogInError'
   message: string
 }
-
 const LogInError = builder.objectRef<ILogInError>('LogInError')
 LogInError.implement({
   fields: t => ({ message: t.exposeString('message') }),
@@ -185,13 +207,16 @@ const LogInResponse = builder.unionType('LogInResponse', {
 
 type IRegistered = {
   type: 'Registered'
-  user: IUser
+  userId: string
 }
-
 const Registered = builder.objectRef<IRegistered>('Registered')
-
 Registered.implement({
-  fields: t => ({ user: t.expose('user', { type: User }) }),
+  fields: t => ({
+    user: t.field({
+      type: User,
+      resolve: ({ userId }, _, { prisma }) => prisma.user.findUnique({ where: { id: userId } }),
+    }),
+  }),
 })
 
 type IRegistrationError = {
@@ -225,14 +250,12 @@ builder.mutationField('register', t =>
         const user = await register(email, password, res, prisma)
         return {
           type: 'Registered',
-          user: {
-            userId: user.id,
-          },
+          userId: user.id,
         } as IRegistered
       } catch {
         return {
           type: 'RegistrationError',
-          message: 'Error logging in',
+          message: 'Error registering in',
         } as IRegistrationError
       }
     },
@@ -248,9 +271,7 @@ builder.mutationField('login', t =>
         const user = await authenticate(email, password, res, prisma)
         return {
           type: 'LoggedIn',
-          user: {
-            userId: user.id,
-          },
+          userId: user.id,
         } as ILoggedIn
       } catch {
         return {
@@ -276,7 +297,7 @@ builder.mutationField('logout', t =>
   t.field({
     type: LoggedOut,
     resolve: async (_, _args, { res, prisma, session }) => {
-      if (session.type === 'NotLoggedIn') {
+      if (session.type === 'Unauthorized') {
         return {
           type: 'LoggedOut',
           message: 'Already logged out',
