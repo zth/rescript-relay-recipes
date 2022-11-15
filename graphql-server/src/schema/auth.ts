@@ -2,7 +2,7 @@ import { verify, sign, Secret, JwtPayload } from 'jsonwebtoken'
 import { IncomingMessage, ServerResponse } from 'http'
 import Prisma, { PrismaClient } from '@prisma/client'
 import { v4 as uuidv4 } from 'uuid'
-import { builder } from './builder'
+import { builder, prisma } from './builder'
 
 const ACCESS_TOKEN_SECRET: Secret = 'whatever'
 const REFRESH_TOKEN_SECRET: Secret = 'whateverelse'
@@ -103,7 +103,7 @@ const User = builder.node(builder.objectRef<Prisma.User>('User'), {
   fields: t => ({
     username: t.exposeString('username'),
   }),
-  loadMany: async (ids, { prisma }) => prisma.user.findMany({ where: { id: { in: ids } } }),
+  loadMany: async ids => prisma.user.findMany({ where: { id: { in: ids } } }),
 })
 
 type ILoggedIn = {
@@ -116,7 +116,7 @@ LoggedIn.implement({
   fields: t => ({
     user: t.field({
       type: User,
-      resolve: ({ userId }, _, { prisma }) => prisma.user.findUnique({ where: { id: userId } }),
+      resolve: ({ userId }, _) => prisma.user.findUnique({ where: { id: userId } }),
     }),
   }),
 })
@@ -214,7 +214,7 @@ Registered.implement({
   fields: t => ({
     user: t.field({
       type: User,
-      resolve: ({ userId }, _, { prisma }) => prisma.user.findUnique({ where: { id: userId } }),
+      resolve: ({ userId }, _) => prisma.user.findUnique({ where: { id: userId } }),
     }),
   }),
 })
@@ -245,7 +245,7 @@ builder.mutationField('register', t =>
   t.field({
     type: RegistrationResponse,
     args: { email: t.arg.string({ required: true }), password: t.arg.string({ required: true }) },
-    resolve: async (_, { email, password }, { res, prisma }) => {
+    resolve: async (_, { email, password }, { res }) => {
       try {
         const user = await register(email, password, res, prisma)
         return {
@@ -269,7 +269,7 @@ builder.mutationField('login', t =>
       username: t.arg.string({ required: true }),
       password: t.arg.string({ required: true }),
     },
-    resolve: async (_, { username, password }, { res, prisma }) => {
+    resolve: async (_, { username, password }, { res }) => {
       try {
         const user = await authenticate(username, password, res, prisma)
         return {
@@ -299,7 +299,7 @@ LoggedOut.implement({
 builder.mutationField('logout', t =>
   t.field({
     type: LoggedOut,
-    resolve: async (_, _args, { res, prisma, session }) => {
+    resolve: async (_, _args, { res, session }) => {
       if (session.type === 'Unauthorized') {
         return {
           type: 'LoggedOut',
