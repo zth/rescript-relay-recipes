@@ -13,3 +13,9 @@ model User {
   password        String
   refreshTokenKey String?
 }
+
+model Counter {
+  id    Int    @id @default(autoincrement())
+  label String
+  value Int
+}
