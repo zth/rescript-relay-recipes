@@ -11,6 +11,7 @@
     "@graphql-yoga/node": "^2.13.13",
     "@pothos/core": "^3.22.6",
     "@pothos/plugin-errors": "^3.8.6",
+    "@pothos/plugin-prisma": "^3.35.8",
     "@pothos/plugin-relay": "^3.28.4",
     "@pothos/plugin-scope-auth": "^3.15.0",
     "@prisma/client": "4.5.0",
