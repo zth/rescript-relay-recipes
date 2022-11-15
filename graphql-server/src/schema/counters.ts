@@ -1,33 +1,16 @@
+import { decodeGlobalID } from '@pothos/plugin-relay'
 import { resolveArrayConnection } from '@pothos/plugin-relay'
-import { builder } from './builder'
+import { builder, prisma } from './builder'
 
-class Counter {
-  static counterId = 0
-
-  id: number
-  label: string
-  count: number
-
-  constructor(label: string) {
-    this.id = Counter.counterId++
-    this.label = label
-    this.count = 0
-  }
-}
-
-const counters: Array<Counter> = [new Counter('Default')]
-const getCounter = (id: string) => counters.find(counter => String(counter.id) === id)
-
-builder.node(Counter, {
+const Counter = builder.prismaNode('Counter', {
   name: 'Counter',
   description: 'A counter with a label and count',
   id: {
-    resolve: counter => counter.id,
+    field: 'id',
   },
-  loadMany: ids => ids.map(id => getCounter(id)),
   fields: t => ({
     label: t.exposeString('label'),
-    count: t.exposeInt('count'),
+    count: t.exposeInt('value'),
   }),
 })
 
@@ -36,20 +19,20 @@ builder.queryFields(t => ({
     type: Counter,
     resolve: async () => {
       await new Promise(f => setTimeout(f, 1000))
-      return counters[0]
+      return null
     },
   }),
   myCounter: t.field({
     type: Counter,
     resolve: async () => {
       await new Promise(f => setTimeout(f, 1000))
-      return counters[0]
+      return null
     },
   }),
   counters: t.connection({
     type: Counter,
     resolve: (_, args) => {
-      return resolveArrayConnection({ args }, counters)
+      return resolveArrayConnection({ args }, [])
     },
   }),
 }))
@@ -59,10 +42,20 @@ builder.mutationFields(t => ({
     type: Counter,
     args: { id: t.arg.globalID({ required: true }) },
     resolve: async (_, { id: globalID }) => {
-      const counter = getCounter(globalID.id)
+      if (globalID.typename !== 'Counter') {
+        throw new Error(`${globalID} is not a Node id of a Counter`)
+      }
+
+      const counterId = Number(globalID.id)
+
+      // TODO: Add ownership checks
+      const counter = await prisma.counter.findUnique({ where: { id: counterId } })
+
       if (counter) {
-        counter.count++
-        return counter
+        return prisma.counter.update({
+          where: { id: counterId },
+          data: { value: counter.value + 1 },
+        })
       }
 
       return null
@@ -72,10 +65,19 @@ builder.mutationFields(t => ({
     type: Counter,
     args: { id: t.arg.globalID({ required: true }) },
     resolve: async (_, { id: globalID }) => {
-      const counter = getCounter(globalID.id)
+      if (globalID.typename !== 'Counter') {
+        throw new Error(`${globalID} is not a Node id of a Counter`)
+      }
+      const counterId = Number(globalID.id)
+
+      // TODO: Add ownership checks
+      const counter = await prisma.counter.findUnique({ where: { id: counterId } })
+
       if (counter) {
-        counter.count--
-        return counter
+        return prisma.counter.update({
+          where: { id: counterId },
+          data: { value: counter.value - 1 },
+        })
       }
 
       return null

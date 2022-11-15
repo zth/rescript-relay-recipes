@@ -96,14 +96,13 @@ const parseAuthCookies = (cookies: string | undefined) => {
   }
 }
 
-const User = builder.node(builder.objectRef<Prisma.User>('User'), {
+const User = builder.prismaNode('User', {
   id: {
-    resolve: ({ id }) => id,
+    field: 'id',
   },
   fields: t => ({
     username: t.exposeString('username'),
   }),
-  loadMany: async ids => prisma.user.findMany({ where: { id: { in: ids } } }),
 })
 
 type ILoggedIn = {
