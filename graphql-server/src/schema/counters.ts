@@ -39,6 +39,13 @@ builder.queryFields(t => ({
       return counters[0]
     },
   }),
+  myCounter: t.field({
+    type: Counter,
+    resolve: async () => {
+      await new Promise(f => setTimeout(f, 1000))
+      return counters[0]
+    },
+  }),
   counters: t.connection({
     type: Counter,
     resolve: (_, args) => {

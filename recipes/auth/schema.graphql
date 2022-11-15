@@ -47,6 +47,7 @@ type PageInfo {
 type Query {
   counters(after: ID, before: ID, first: Int, last: Int): QueryCountersConnection
   defaultCounter: Counter
+  myCounter: Counter
   node(id: ID!): Node
   nodes(ids: [ID!]!): [Node]!
   session: Session

@@ -8,7 +8,7 @@ module LogOutMutation = %relay(`
   mutation CurrentUserLogOutMutation {
     logout {
       ... on LoggedOut {
-        message
+        __typename
       }
 
     }
@@ -24,10 +24,10 @@ let make = (~user as userRef) => {
 
   <div
     style={
-      open ReactDOM
-      Style.unsafeAddStyle(Style.make(~display="flex", ~alignItems="baseline", ()), {"gap": "8px"})
+      open ReactDOM.Style
+      unsafeAddStyle(make(~display="flex", ~alignItems="baseline", ()), {"gap": "8px"})
     }>
-    <span> {`Welcome back ${username}`->React.string} </span>
+    <span> {`Hello ${username}!`->React.string} </span>
     <button
       onClick={_ =>
         logOut(
