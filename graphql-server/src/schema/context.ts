@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import { getSessionAndRefreshTokens, ISession } from './auth'
 import { PrismaClient } from '@prisma/client'
+import { prisma } from './builder'
 
 export type Context = {
   req: IncomingMessage
@@ -8,8 +9,6 @@ export type Context = {
   session: ISession
   prisma: PrismaClient
 }
-
-const prisma = new PrismaClient()
 
 export const contextFactory = async ({
   req,
