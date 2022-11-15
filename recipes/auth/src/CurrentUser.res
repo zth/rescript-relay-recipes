@@ -1,6 +1,6 @@
 module Fragment = %relay(`
   fragment CurrentUser_user on User {
-    email @required(action: THROW)
+    username @required(action: THROW)
   }
 `)
 
@@ -15,22 +15,25 @@ module LogOutMutation = %relay(`
   }
 `)
 
-let invalidateStore = (store: RescriptRelay.RecordSourceSelectorProxy.t) => Js.log(store)
 @val external reload: unit => unit = "window.location.reload"
 
 @react.component
 let make = (~user as userRef) => {
-  let {email} = Fragment.use(userRef)
+  let {username} = Fragment.use(userRef)
   let (logOut, _) = LogOutMutation.use()
 
-  <div>
-    {`Welcome back ${email}`->React.string}
+  <div
+    style={
+      open ReactDOM
+      Style.unsafeAddStyle(Style.make(~display="flex", ~alignItems="baseline", ()), {"gap": "8px"})
+    }>
+    <span> {`Welcome back ${username}`->React.string} </span>
     <button
       onClick={_ =>
         logOut(
           ~variables=(),
           ~updater=(store, _) => {
-            invalidateStore(store)
+            RescriptRelay.RecordSourceSelectorProxy.invalidateStore(store)
             reload()
           },
           (),

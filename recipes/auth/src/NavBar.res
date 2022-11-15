@@ -1,5 +1,5 @@
 module Query = %relay(`
-    query SessionQuery {
+    query NavBarSessionQuery {
       session @required(action: THROW) {
         ... on LoggedIn {
           user @required(action: THROW) {
@@ -14,8 +14,8 @@ module Query = %relay(`
   `)
 
 module LoginMutation = %relay(`
-  mutation SessionLoginMutation($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
+  mutation NavBarLoginMutation($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
       ... on LoggedIn {
         __typename
       }
@@ -27,7 +27,7 @@ module LoginMutation = %relay(`
 `)
 
 module LogOutMutation = %relay(`
-  mutation SessionLogOutMutation {
+  mutation NavBarLogOutMutation {
     logout {
       ... on LoggedOut {
         __typename
@@ -39,9 +39,10 @@ module LogOutMutation = %relay(`
 @react.component
 let make = () => {
   let {session} = Query.use(~variables=(), ())
-
-  switch session {
-  | #LoggedIn(loggedIn) => <CurrentUser user=loggedIn.user.fragmentRefs />
-  | #Unauthorized(_) | #UnselectedUnionMember(_) => <UnauthorizedUser />
-  }
+  <div style={ReactDOM.Style.make(~display="flex", ~flexDirection="row-reverse", ())}>
+    {switch session {
+    | #LoggedIn(loggedIn) => <CurrentUser user=loggedIn.user.fragmentRefs />
+    | #Unauthorized(_) | #UnselectedUnionMember(_) => <UnauthorizedUser />
+    }}
+  </div>
 }

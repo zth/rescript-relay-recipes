@@ -21,7 +21,8 @@ module WithoutLoader = {
 @react.component
 let make = () => {
   <div>
-    <Session />
+    <NavBar />
+    <hr />
     <React.Suspense fallback={"Loading..."->React.string}>
       <WithoutLoader />
     </React.Suspense>

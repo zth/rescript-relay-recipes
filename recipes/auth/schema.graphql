@@ -1,16 +1,10 @@
-"""
-Exposes a URL that specifies the behavior of this scalar.
-"""
+"""Exposes a URL that specifies the behavior of this scalar."""
 directive @specifiedBy(
-  """
-  The URL that specifies the behavior of this scalar.
-  """
+  """The URL that specifies the behavior of this scalar."""
   url: String!
 ) on SCALAR
 
-"""
-A counter with a label and count
-"""
+"""A counter with a label and count"""
 type Counter implements Node {
   count: Int
   id: ID!
@@ -19,10 +13,6 @@ type Counter implements Node {
 
 type LoggedIn {
   user: User
-}
-
-type LoggedOut {
-  message: String
 }
 
 type LoggedOut {
@@ -38,7 +28,7 @@ union LogInResponse = LogInError | LoggedIn
 type Mutation {
   decrementCount(id: ID!): Counter
   incrementCount(id: ID!): Counter
-  login(email: String!, password: String!): LogInResponse
+  login(password: String!, username: String!): LogInResponse
   logout: LoggedOut
   register(email: String!, password: String!): RegistrationResponse
 }
@@ -55,14 +45,8 @@ type PageInfo {
 }
 
 type Query {
-  counters(
-    after: ID
-    before: ID
-    first: Int
-    last: Int
-  ): QueryCountersConnection
+  counters(after: ID, before: ID, first: Int, last: Int): QueryCountersConnection
   defaultCounter: Counter
-  me: String
   node(id: ID!): Node
   nodes(ids: [ID!]!): [Node]!
   session: Session
@@ -78,6 +62,10 @@ type QueryCountersConnectionEdge {
   node: Counter!
 }
 
+type Registered {
+  user: User
+}
+
 type RegistrationError {
   message: String
 }
@@ -91,6 +79,7 @@ type Unauthorized {
 }
 
 type User implements Node {
-  email: String
   id: ID!
+  username: String
 }
+

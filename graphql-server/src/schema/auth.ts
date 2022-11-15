@@ -49,12 +49,12 @@ const generateTokensAndSetCookies = async (
 }
 
 export const register = async (
-  email: string,
+  username: string,
   password: string,
   res: ServerResponse,
   prisma: PrismaClient
 ) => {
-  const user = await prisma.user.create({ data: { email, password } })
+  const user = await prisma.user.create({ data: { username, password } })
 
   await generateTokensAndSetCookies(user.id, res, prisma)
 
@@ -62,12 +62,12 @@ export const register = async (
 }
 
 export const authenticate = async (
-  email: string,
+  username: string,
   password: string,
   res: ServerResponse,
   prisma: PrismaClient
 ) => {
-  const user = await prisma.user.findFirst({ where: { email, password } })
+  const user = await prisma.user.findFirst({ where: { username, password } })
 
   if (!user) {
     throw new Error('Not found')
@@ -101,7 +101,7 @@ const User = builder.node(builder.objectRef<Prisma.User>('User'), {
     resolve: ({ id }) => id,
   },
   fields: t => ({
-    email: t.exposeString('email'),
+    username: t.exposeString('username'),
   }),
   loadMany: async (ids, { prisma }) => prisma.user.findMany({ where: { id: { in: ids } } }),
 })
@@ -265,15 +265,18 @@ builder.mutationField('register', t =>
 builder.mutationField('login', t =>
   t.field({
     type: LogInResponse,
-    args: { email: t.arg.string({ required: true }), password: t.arg.string({ required: true }) },
-    resolve: async (_, { email, password }, { res, prisma }) => {
+    args: {
+      username: t.arg.string({ required: true }),
+      password: t.arg.string({ required: true }),
+    },
+    resolve: async (_, { username, password }, { res, prisma }) => {
       try {
-        const user = await authenticate(email, password, res, prisma)
+        const user = await authenticate(username, password, res, prisma)
         return {
           type: 'LoggedIn',
           userId: user.id,
         } as ILoggedIn
-      } catch {
+      } catch (e) {
         return {
           type: 'LogInError',
           message: 'Error logging in',
