@@ -25,7 +25,7 @@ async function main() {
   if (!defaultCounter) {
     await prisma.counter.create({
       data: {
-        label: 'Default Counter',
+        label: 'Public Counter',
         value: 0,
       },
     })

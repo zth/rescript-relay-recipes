@@ -15,19 +15,13 @@ module Query = %relay(`
 let make = () => {
   let {session} = Query.use(~variables=(), ())
 
-  switch session {
-  | #LoggedIn(_) =>
-    <div>
-      <DefaultCounter />
-      <hr />
-      <MyCounters />
-    </div>
-  | #Unauthorized(_) =>
-    <div>
-      <DefaultCounter />
-      <hr />
-      <span> {"Please log in to see all your counters"->React.string} </span>
-    </div>
-  | #UnselectedUnionMember(_) => ""->React.string
-  }
+  <>
+    <DefaultCounter />
+    <hr />
+    {switch session {
+    | #LoggedIn(_) => <MyCounters />
+    | #Unauthorized(_) => <span> {"Log in to see your private counter"->React.string} </span>
+    | #UnselectedUnionMember(_) => React.null
+    }}
+  </>
 }
