@@ -1,21 +1,30 @@
 {
   "name": "graphql-server",
-  "version": "0.1",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "cross-env NODE_ENV=development ts-node-dev --exit-child --respawn src/main.ts",
-    "start": "ts-node src/main.ts"
+    "start": "ts-node src/main.ts",
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@graphql-yoga/node": "^2.13.13",
     "@pothos/core": "^3.22.6",
+    "@pothos/plugin-errors": "^3.8.6",
+    "@pothos/plugin-prisma": "^3.35.8",
     "@pothos/plugin-relay": "^3.28.4",
-    "graphql": "^16.6.0"
+    "@pothos/plugin-scope-auth": "^3.15.0",
+    "@prisma/client": "^4.6.1",
+    "@types/jsonwebtoken": "^8.5.9",
+    "@types/uuid": "^8.3.4",
+    "graphql": "^16.6.0",
+    "jsonwebtoken": "^8.5.1",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
+    "prisma": "^4.6.1",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^4.8.4"

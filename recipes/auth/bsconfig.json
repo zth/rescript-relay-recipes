@@ -1,0 +1,19 @@
+{
+  "name": "rescript-project-template",
+  "version": "0.0.1",
+  "sources": {
+    "dir" : "src",
+    "subdirs" : true
+  },
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js",
+  "ppx-flags": ["rescript-relay/ppx"],
+  "bs-dependencies": ["@rescript/react", "rescript-relay", "bs-fetch"],
+  "reason": { "react-jsx": 3 },
+  "warnings": {
+    "error" : "+101"
+  }
+}

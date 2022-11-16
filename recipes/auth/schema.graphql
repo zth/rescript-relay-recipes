@@ -1,0 +1,97 @@
+"""Exposes a URL that specifies the behavior of this scalar."""
+directive @specifiedBy(
+  """The URL that specifies the behavior of this scalar."""
+  url: String!
+) on SCALAR
+
+"""A counter with a label and count"""
+type Counter implements Node {
+  count: Int
+  id: ID!
+  label: String
+}
+
+type LoggedIn {
+  user: User
+}
+
+type LoggedOut {
+  message: String
+}
+
+type LogInError {
+  message: String
+}
+
+union LogInResponse = LogInError | LoggedIn
+
+type Mutation {
+  decrementCount(id: ID!): Counter
+  incrementCount(id: ID!): Counter
+  login(password: String!, username: String!): LogInResponse
+  logout: LoggedOut
+  register(email: String!, password: String!): RegistrationResponse
+}
+
+interface Node {
+  id: ID!
+}
+
+type PageInfo {
+  endCursor: ID
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: ID
+}
+
+type Query {
+  defaultCounter: Counter
+  myCounter: Counter
+  myCounters(after: ID, before: ID, first: Int, last: Int): QueryMyCountersConnection
+  node(id: ID!): Node
+  nodes(ids: [ID!]!): [Node]!
+  publicCounters(after: ID, before: ID, first: Int, last: Int): QueryPublicCountersConnection
+  session: Session
+}
+
+type QueryMyCountersConnection {
+  edges: [QueryMyCountersConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+type QueryMyCountersConnectionEdge {
+  cursor: ID!
+  node: Counter!
+}
+
+type QueryPublicCountersConnection {
+  edges: [QueryPublicCountersConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+type QueryPublicCountersConnectionEdge {
+  cursor: ID!
+  node: Counter!
+}
+
+type Registered {
+  user: User
+}
+
+type RegistrationError {
+  message: String
+}
+
+union RegistrationResponse = Registered | RegistrationError
+
+union Session = LoggedIn | Unauthorized
+
+type Unauthorized {
+  message: String
+}
+
+type User implements Node {
+  id: ID!
+  username: String
+}
+
