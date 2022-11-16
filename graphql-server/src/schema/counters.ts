@@ -1,4 +1,3 @@
-import { decodeGlobalID } from '@pothos/plugin-relay'
 import { resolveArrayConnection } from '@pothos/plugin-relay'
 import { builder, prisma } from './builder'
 
@@ -17,26 +16,42 @@ const Counter = builder.prismaNode('Counter', {
 builder.queryFields(t => ({
   defaultCounter: t.field({
     type: Counter,
-    resolve: async () => {
-      await new Promise(f => setTimeout(f, 1000))
-      return null
-    },
+    resolve: (query, _parent, _args) =>
+      prisma.counter.findFirst({ ...query, where: { owner: null } }),
   }),
   myCounter: t.field({
     type: Counter,
-    resolve: async () => {
-      await new Promise(f => setTimeout(f, 1000))
-      return null
+    authScopes: {
+      loggedIn: true,
+    },
+    resolve: (_parent, _args, { session }) => {
+      if (session.type === 'Unauthorized') {
+        return null
+      }
+      return prisma.counter.findFirst({ where: { owner: { id: session.userId } } })
     },
   }),
-  counters: t.connection({
+  publicCounters: t.prismaConnection({
     type: Counter,
-    resolve: (_, args) => {
-      return resolveArrayConnection({ args }, [])
+    cursor: 'id',
+    resolve: (query, _parent, _args) =>
+      prisma.counter.findMany({ ...query, where: { owner: null } }),
+  }),
+  myCounters: t.prismaConnection({
+    type: Counter,
+    cursor: 'id',
+    authScopes: {
+      loggedIn: true,
+    },
+    resolve: (query, _parent, _args, { session }) => {
+      if (session.type === 'Unauthorized') {
+        return null
+      }
+
+      return prisma.counter.findMany({ ...query, where: { owner: { id: session.userId } } })
     },
   }),
 }))
-
 builder.mutationFields(t => ({
   incrementCount: t.field({
     type: Counter,

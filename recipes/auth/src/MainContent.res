@@ -19,12 +19,14 @@ let make = () => {
   | #LoggedIn(_) =>
     <div>
       <DefaultCounter />
+      <hr />
       <MyCounters />
     </div>
   | #Unauthorized(_) =>
     <div>
-      <span> {"Please log in to see all your counters"->React.string} </span>
       <DefaultCounter />
+      <hr />
+      <span> {"Please log in to see all your counters"->React.string} </span>
     </div>
   | #UnselectedUnionMember(_) => ""->React.string
   }

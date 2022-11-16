@@ -1,6 +1,6 @@
 module Query = %relay(`
   query DefaultCounterQuery {
-    defaultCounter @required(action: THROW) {
+    defaultCounter {
       ...Counter_counter
     }
   }
@@ -9,5 +9,9 @@ module Query = %relay(`
 @react.component
 let make = () => {
   let queryData = Query.use(~variables=(), ())
-  <Counter counter=queryData.defaultCounter.fragmentRefs />
+
+  switch queryData {
+  | {defaultCounter: None} => <div> {"No default counter"->React.string} </div>
+  | {defaultCounter: Some(counter)} => <Counter counter=counter.fragmentRefs />
+  }
 }

@@ -5,13 +5,14 @@ import { PrismaClient } from '@prisma/client'
 import RelayPlugin from '@pothos/plugin-relay'
 import type PrismaTypes from '@pothos/plugin-prisma/generated'
 import { Context } from './context'
+import { GraphQLError } from 'graphql'
 
 export const prisma = new PrismaClient({})
 
 export const builder = new SchemaBuilder<{
   PrismaTypes: PrismaTypes
   Context: Context
-  AuthScopes: { protected: boolean }
+  AuthScopes: { loggedIn: boolean }
   DefaultFieldNullability: true
 }>({
   plugins: [ScopeAuthPlugin, PrismaPlugin, RelayPlugin],
@@ -19,8 +20,17 @@ export const builder = new SchemaBuilder<{
     client: prisma,
   },
   authScopes: async context => ({
-    protected: context.session.type === 'LoggedIn',
+    loggedIn: context.session.type === 'LoggedIn',
   }),
+  scopeAuthOptions: {
+    unauthorizedError: () => {
+      throw new GraphQLError('Not authenticated', {
+        extensions: {
+          code: 'NOT_AUTHENTICATED',
+        },
+      })
+    },
+  },
   defaultFieldNullability: true,
   relayOptions: {
     clientMutationId: 'omit',

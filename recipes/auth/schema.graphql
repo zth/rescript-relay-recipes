@@ -45,20 +45,31 @@ type PageInfo {
 }
 
 type Query {
-  counters(after: ID, before: ID, first: Int, last: Int): QueryCountersConnection
   defaultCounter: Counter
   myCounter: Counter
+  myCounters(after: ID, before: ID, first: Int, last: Int): QueryMyCountersConnection
   node(id: ID!): Node
   nodes(ids: [ID!]!): [Node]!
+  publicCounters(after: ID, before: ID, first: Int, last: Int): QueryPublicCountersConnection
   session: Session
 }
 
-type QueryCountersConnection {
-  edges: [QueryCountersConnectionEdge]!
+type QueryMyCountersConnection {
+  edges: [QueryMyCountersConnectionEdge]!
   pageInfo: PageInfo!
 }
 
-type QueryCountersConnectionEdge {
+type QueryMyCountersConnectionEdge {
+  cursor: ID!
+  node: Counter!
+}
+
+type QueryPublicCountersConnection {
+  edges: [QueryPublicCountersConnectionEdge]!
+  pageInfo: PageInfo!
+}
+
+type QueryPublicCountersConnectionEdge {
   cursor: ID!
   node: Counter!
 }
