@@ -1,4 +1,5 @@
 import { builder, prisma } from './builder'
+import { ErrorInterface } from './error'
 import { User } from './user'
 
 export const Comment = builder.prismaNode('Comment', {
@@ -15,9 +16,30 @@ export const Comment = builder.prismaNode('Comment', {
   }),
 })
 
+class PostCommentError extends Error {}
+builder.objectType(PostCommentError, {
+  name: 'PostCommentError',
+  interfaces: [ErrorInterface],
+  fields: t => ({
+    message: t.exposeString('message'),
+  }),
+})
+
 builder.mutationFields(t => ({
   postComment: t.field({
     type: Comment,
+    errors: {
+      union: {
+        name: 'PostCommentResult',
+      },
+      result: {
+        name: 'CommentPosted',
+      },
+      dataField: {
+        name: 'comment',
+      },
+      types: [PostCommentError],
+    },
     args: {
       postNodeId: t.arg.globalID({ required: true }),
       content: t.arg.string({ required: true }),

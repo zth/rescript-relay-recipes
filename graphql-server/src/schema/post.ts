@@ -1,4 +1,5 @@
 import { builder, prisma } from './builder'
+import { ErrorInterface } from './error'
 import { User } from './user'
 
 export const Post = builder.prismaNode('Post', {
@@ -35,6 +36,7 @@ builder.queryFields(t => ({
 class CreatePostError extends Error {}
 builder.objectType(CreatePostError, {
   name: 'CreatePostError',
+  interfaces: [ErrorInterface],
   fields: t => ({
     message: t.exposeString('message'),
   }),
@@ -51,7 +53,7 @@ builder.mutationFields(t => ({
         name: 'PostCreated',
       },
       dataField: {
-        name: 'Post',
+        name: 'post',
       },
       types: [CreatePostError],
     },
