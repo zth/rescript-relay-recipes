@@ -1,6 +1,6 @@
 module LoginMutation = %relay(`
-  mutation UnauthorizedUserLoginMutation($username: String!, $password: String!) {
-     login(username: $username, password: $password) {
+  mutation UnauthenticatedUserLoginMutation($username: String!, $password: String!) {
+     logIn(username: $username, password: $password) {
       ... on LoggedIn {
         __typename
       }
@@ -27,7 +27,7 @@ let make = () => {
       placeholder="Username"
       value=username
       onChange={event => {
-        let v = String.trim(ReactEvent.Form.target(event)["value"])
+        let v = ReactEvent.Form.target(event)["value"]
         setUsername(_ => v)
       }}
     />
@@ -36,7 +36,7 @@ let make = () => {
       type_="password"
       value=password
       onChange={event => {
-        let v = String.trim(ReactEvent.Form.target(event)["value"])
+        let v = ReactEvent.Form.target(event)["value"]
         setPassword(_ => v)
       }}
     />
@@ -44,9 +44,9 @@ let make = () => {
       disabled={loading || username === "" || password === ""}
       onClick={_ =>
         login(
-          ~variables={username, password},
-          ~updater=(store, {login}) => {
-            switch login {
+          ~variables={username: String.trim(username), password},
+          ~updater=(store, {logIn}) => {
+            switch logIn {
             | Some(#LoggedIn(_)) =>
               RescriptRelay.RecordSourceSelectorProxy.invalidateStore(store)
               reload()

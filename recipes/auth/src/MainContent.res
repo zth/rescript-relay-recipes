@@ -1,27 +1,27 @@
 module Query = %relay(`
   query MainContentQuery {
     session @required(action: THROW) {
-      ... on LoggedIn {
+      ... on Authenticated {
         __typename
       }
-      ... on Unauthorized {
+      ... on Unauthenticated {
         __typename
       }
     }
+    ...Posts_query
   }
 `)
 
 @react.component
 let make = () => {
-  let {session} = Query.use(~variables=(), ())
+  let data = Query.use(~variables=(), ())
 
   <>
-    <DefaultCounter />
-    <hr />
-    {switch session {
-    | #LoggedIn(_) => <MyCounters />
-    | #Unauthorized(_) => <span> {"Log in to see your private counter"->React.string} </span>
+    {switch data.session {
+    | #Authenticated(_) => <span> {"Authenticated"->React.string} </span>
+    | #Unauthenticated(_) => <span> {"Log in to create new posts"->React.string} </span>
     | #UnselectedUnionMember(_) => React.null
     }}
+    <Posts posts=data.fragmentRefs />
   </>
 }

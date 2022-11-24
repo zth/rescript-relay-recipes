@@ -1,11 +1,11 @@
 module Fragment = %relay(`
-  fragment CurrentUser_user on User {
+  fragment AuthenticatedUser_user on User {
     username @required(action: THROW)
   }
 `)
 
 module LogOutMutation = %relay(`
-  mutation CurrentUserLogOutMutation {
+  mutation AuthenticatedUserLogOutMutation {
     logout {
       ... on LoggedOut {
         __typename
