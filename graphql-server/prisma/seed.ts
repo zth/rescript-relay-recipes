@@ -3,33 +3,55 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  await prisma.user.upsert({
-    where: { username: 'abc' },
+  await prisma.user.deleteMany()
+  await prisma.post.deleteMany()
+  await prisma.comment.deleteMany()
 
-    update: {},
-    create: {
-      username: 'abc',
-      password: 'abc',
+  const JohnDoe = await prisma.user.create({
+    data: {
+      username: 'John Doe',
+      password: 'password',
+    },
+  })
 
-      Counter: {
-        create: {
-          label: 'ABCs counter',
-          value: 0,
-        },
+  const JaneDoe = await prisma.user.create({
+    data: {
+      username: 'Jane Doe',
+      password: 'password',
+    },
+  })
+
+  await prisma.post.create({
+    data: {
+      title: 'This is a post about the @required-directive',
+      content: 'It can be very handy',
+      posterId: JohnDoe.id,
+      comments: {
+        create: [
+          {
+            commenterId: JaneDoe.id,
+            content: 'Agreed, but be careful about using them in callbacks!',
+          },
+        ],
       },
     },
   })
 
-  const defaultCounter = await prisma.counter.findFirst({ where: { owner: null } })
-
-  if (!defaultCounter) {
-    await prisma.counter.create({
-      data: {
-        label: 'Public Counter',
-        value: 0,
+  await prisma.post.create({
+    data: {
+      title: 'This is a post about relay connections',
+      content: "They're great",
+      posterId: JaneDoe.id,
+      comments: {
+        create: [
+          {
+            commenterId: JohnDoe.id,
+            content: 'They require a bit of set-up, but you get so much for free',
+          },
+        ],
       },
-    })
-  }
+    },
+  })
 }
 
 main()

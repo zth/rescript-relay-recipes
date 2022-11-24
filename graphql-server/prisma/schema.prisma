@@ -16,13 +16,26 @@ model User {
   username        String    @unique
   password        String
   refreshTokenKey String?
-  Counter         Counter[]
+  posts           Post[]
+  comments        Comment[]
 }
 
-model Counter {
-  id     Int     @id @default(autoincrement())
-  label  String
-  value  Int
-  owner  User?   @relation(fields: [userId], references: [id])
-  userId String?
+model Post {
+  id        String    @id @default(uuid())
+  posterId  String
+  poster    User      @relation(fields: [posterId], references: [id])
+  createdAt DateTime  @default(now())
+  title     String
+  content   String
+  comments  Comment[]
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  commenterId String
+  commenter   User     @relation(fields: [commenterId], references: [id])
+  createdAt   DateTime @default(now())
+  Post        Post     @relation(fields: [postId], references: [id])
+  postId      String
+  content     String
 }
