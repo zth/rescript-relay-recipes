@@ -1,6 +1,7 @@
 import { builder, prisma } from './builder'
 import { IAuthenticated, IUnauthenticated, authenticate, register } from '../utils/auth'
 import { User } from './user'
+import { ErrorInterface } from './error'
 
 const Authenticated = builder.objectRef<IAuthenticated>('Authenticated')
 Authenticated.implement({
@@ -36,104 +37,77 @@ builder.queryField('session', t =>
   })
 )
 
-type ILogInError = {
-  type: 'LogInError'
-  message: string
-}
-const LogInError = builder.objectRef<ILogInError>('LogInError')
-LogInError.implement({
-  fields: t => ({ message: t.exposeString('message') }),
-})
-
-const LogInResponse = builder.unionType('LogInResponse', {
-  types: [Authenticated, LogInError],
-  resolveType: ({ type }) => {
-    switch (type) {
-      case 'Authenticated':
-        return Authenticated
-      case 'LogInError':
-        return LogInError
-    }
-  },
-})
-
-type IRegistered = {
-  type: 'Registered'
-  userId: string
-}
-const Registered = builder.objectRef<IRegistered>('Registered')
-Registered.implement({
+class RegistrationError extends Error {}
+builder.objectType(RegistrationError, {
+  name: 'RegistrationError',
+  interfaces: [ErrorInterface],
   fields: t => ({
-    user: t.field({
-      type: User,
-      resolve: ({ userId }, _) => prisma.user.findUnique({ where: { id: userId } }),
-    }),
+    message: t.exposeString('message'),
   }),
-})
-
-type IRegistrationError = {
-  type: 'RegistrationError'
-  message: string
-}
-
-const RegistrationError = builder.objectRef<IRegistrationError>('RegistrationError')
-RegistrationError.implement({
-  fields: t => ({ message: t.exposeString('message') }),
-})
-
-const RegistrationResponse = builder.unionType('RegistrationResponse', {
-  types: [Registered, RegistrationError],
-  resolveType: ({ type }) => {
-    switch (type) {
-      case 'Registered':
-        return Registered
-      case 'RegistrationError':
-        return RegistrationError
-    }
-  },
 })
 
 builder.mutationField('register', t =>
   t.field({
-    type: RegistrationResponse,
+    type: User,
     args: { email: t.arg.string({ required: true }), password: t.arg.string({ required: true }) },
+    errors: {
+      union: {
+        name: 'RegisterResult',
+      },
+      result: {
+        name: 'Registered',
+      },
+      dataField: {
+        name: 'user',
+      },
+      types: [RegistrationError],
+    },
     resolve: async (_, { email, password }, { res }) => {
       try {
-        const user = await register(email, password, res, prisma)
-        return {
-          type: 'Registered',
-          userId: user.id,
-        } as IRegistered
-      } catch {
-        return {
-          type: 'RegistrationError',
-          message: 'Error registering in',
-        } as IRegistrationError
+        return await register(email, password, res, prisma)
+      } catch (e) {
+        throw new RegistrationError(`Error registering`)
       }
     },
   })
 )
 
-builder.mutationField('login', t =>
+class LogInError extends Error {}
+builder.objectType(LogInError, {
+  name: 'LogInError',
+  interfaces: [ErrorInterface],
+  fields: t => ({
+    message: t.exposeString('message'),
+  }),
+})
+
+builder.mutationField('logIn', t =>
   t.field({
-    type: LogInResponse,
+    type: User,
     args: {
       username: t.arg.string({ required: true }),
       password: t.arg.string({ required: true }),
     },
+    errors: {
+      union: {
+        name: 'LoginResult',
+      },
+      result: {
+        name: 'LoggedIn',
+      },
+      dataField: {
+        name: 'user',
+      },
+      types: [LogInError],
+    },
     resolve: async (_, { username, password }, { res }) => {
-      try {
-        const user = await authenticate(username, password, res, prisma)
-        return {
-          type: 'Authenticated',
-          userId: user.id,
-        } as IAuthenticated
-      } catch (e) {
-        return {
-          type: 'LogInError',
-          message: 'Error logging in',
-        } as ILogInError
+      const result = await authenticate(username, password, res, prisma)
+
+      if (result.type === 'Authenticated') {
+        return result.user
       }
+
+      throw new LogInError('Uknown user and/or password')
     },
   })
 )
@@ -151,9 +125,6 @@ LoggedOut.implement({
 builder.mutationField('logout', t =>
   t.field({
     type: LoggedOut,
-    authScopes: {
-      loggedIn: true,
-    },
     resolve: async (_, _args, { res, session }) => {
       if (session.type === 'Unauthenticated') {
         return {

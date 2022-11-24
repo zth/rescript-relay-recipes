@@ -1,6 +1,6 @@
 import { verify, sign, Secret, JwtPayload } from 'jsonwebtoken'
 import { IncomingMessage, ServerResponse } from 'http'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, User } from '@prisma/client'
 import { v4 as uuidv4 } from 'uuid'
 
 const ACCESS_TOKEN_SECRET: Secret = 'whatever'
@@ -65,16 +65,23 @@ export const authenticate = async (
   password: string,
   res: ServerResponse,
   prisma: PrismaClient
-) => {
+): Promise<
+  | {
+      type: 'UserNotFoundOrInvalidPassword'
+    }
+  | { type: 'Authenticated'; user: User }
+> => {
   const user = await prisma.user.findFirst({ where: { username, password } })
 
   if (!user) {
-    throw new Error('Not found')
+    return {
+      type: 'UserNotFoundOrInvalidPassword',
+    }
   }
 
   await generateTokensAndSetCookies(user.id, res, prisma)
 
-  return user
+  return { type: 'Authenticated', user }
 }
 
 const parseAuthCookies = (cookies: string | undefined) => {
