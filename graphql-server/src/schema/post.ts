@@ -62,7 +62,7 @@ builder.mutationFields(t => ({
       loggedIn: true,
     },
     resolve: async (_, { title, content }, { session }) => {
-      if (session.type === 'LoggedIn') {
+      if (session.type === 'Authenticated') {
         return prisma.post.create({
           data: {
             posterId: session.userId,

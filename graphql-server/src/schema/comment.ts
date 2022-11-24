@@ -48,7 +48,7 @@ builder.mutationFields(t => ({
       loggedIn: true,
     },
     resolve: async (_, { postNodeId, content }, { session }) => {
-      if (session.type === 'LoggedIn') {
+      if (session.type === 'Authenticated') {
         return prisma.comment.create({
           data: {
             postId: postNodeId.id,

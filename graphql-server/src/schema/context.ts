@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http'
-import { getSessionAndRefreshTokens, ISession } from './auth'
+import { getSessionAndRefreshTokens, ISession } from '../utils/auth'
 import { prisma } from './builder'
 
 export type Context = {

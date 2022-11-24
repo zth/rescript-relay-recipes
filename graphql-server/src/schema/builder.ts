@@ -21,7 +21,7 @@ export const builder = new SchemaBuilder<{
     defaultTypes: [],
   },
   authScopes: async context => ({
-    loggedIn: context.session.type === 'LoggedIn',
+    loggedIn: context.session.type === 'Authenticated',
   }),
   scopeAuthOptions: {
     unauthorizedError: () => {

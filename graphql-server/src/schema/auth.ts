@@ -1,109 +1,9 @@
-import { verify, sign, Secret, JwtPayload } from 'jsonwebtoken'
-import { IncomingMessage, ServerResponse } from 'http'
-import Prisma, { PrismaClient } from '@prisma/client'
-import { v4 as uuidv4 } from 'uuid'
 import { builder, prisma } from './builder'
+import { IAuthenticated, IUnauthenticated, authenticate, register } from '../utils/auth'
 import { User } from './user'
 
-const ACCESS_TOKEN_SECRET: Secret = 'whatever'
-const REFRESH_TOKEN_SECRET: Secret = 'whateverelse'
-
-declare module 'jsonwebtoken' {
-  export interface JwtPayload {
-    userId: string
-    refreshTokenKey?: string
-  }
-}
-
-const generateTokensAndSetCookies = async (
-  userId: string,
-  res: ServerResponse,
-  prisma: PrismaClient
-) => {
-  const accessToken = sign(
-    {
-      userId,
-    },
-    ACCESS_TOKEN_SECRET,
-    { expiresIn: '5m' }
-  )
-
-  const refreshTokenKey = uuidv4()
-
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { refreshTokenKey },
-  })
-
-  const refreshToken = sign(
-    {
-      userId,
-      refreshTokenKey: user.refreshTokenKey,
-    },
-    REFRESH_TOKEN_SECRET,
-    { expiresIn: '7d' }
-  )
-
-  res.setHeader('Set-Cookie', [`accessToken=${accessToken}`, `refreshToken=${refreshToken}`])
-
-  return { accessToken, refreshToken }
-}
-
-export const register = async (
-  username: string,
-  password: string,
-  res: ServerResponse,
-  prisma: PrismaClient
-) => {
-  const user = await prisma.user.create({ data: { username, password } })
-
-  await generateTokensAndSetCookies(user.id, res, prisma)
-
-  return user
-}
-
-export const authenticate = async (
-  username: string,
-  password: string,
-  res: ServerResponse,
-  prisma: PrismaClient
-) => {
-  const user = await prisma.user.findFirst({ where: { username, password } })
-
-  if (!user) {
-    throw new Error('Not found')
-  }
-
-  await generateTokensAndSetCookies(user.id, res, prisma)
-
-  return user
-}
-
-const parseAuthCookies = (cookies: string | undefined) => {
-  const parsedCookies = new Map<string, string>()
-
-  if (!cookies) {
-    return {}
-  }
-
-  cookies.split(';').map(cookie => {
-    const [k, v] = cookie.trim().split('=')
-    parsedCookies.set(k, v)
-  })
-
-  return {
-    accessToken: parsedCookies.get('accessToken'),
-    refreshToken: parsedCookies.get('refreshToken'),
-  }
-}
-
-type ILoggedIn = {
-  type: 'LoggedIn'
-  userId: string
-}
-
-const LoggedIn = builder.objectRef<ILoggedIn>('LoggedIn')
-LoggedIn.implement({
+const Authenticated = builder.objectRef<IAuthenticated>('Authenticated')
+Authenticated.implement({
   fields: t => ({
     user: t.field({
       type: User,
@@ -112,58 +12,19 @@ LoggedIn.implement({
   }),
 })
 
-type IUnauthorized = {
-  type: 'Unauthorized'
-}
-
-const Unauthorized = builder.objectRef<IUnauthorized>('Unauthorized')
-Unauthorized.implement({
+const Unauthenticated = builder.objectRef<IUnauthenticated>('Unauthenticated')
+Unauthenticated.implement({
   fields: t => ({ message: t.string({ resolve: () => 'User is not authorized' }) }),
 })
 
-export type ISession = ILoggedIn | IUnauthorized
-
-export const getSessionAndRefreshTokens = async (
-  req: IncomingMessage,
-  res: ServerResponse,
-  prisma: PrismaClient
-): Promise<ISession> => {
-  const cookies = parseAuthCookies(req.headers.cookie)
-
-  if (cookies.accessToken) {
-    try {
-      const result = verify(cookies.accessToken, ACCESS_TOKEN_SECRET, { complete: true })
-      const payload = result.payload as JwtPayload
-
-      return { type: 'LoggedIn', userId: payload.userId }
-    } catch (e) {
-      try {
-        if (cookies.refreshToken) {
-          const result = verify(cookies.refreshToken, REFRESH_TOKEN_SECRET, { complete: true })
-          const payload = result.payload as JwtPayload
-          const user = await prisma.user.findUniqueOrThrow({ where: { id: payload.userId } })
-
-          if (payload.refreshTokenKey && payload.refreshTokenKey === user.refreshTokenKey) {
-            await generateTokensAndSetCookies(payload.userId, res, prisma)
-          }
-        }
-      } catch {}
-    }
-  }
-
-  return {
-    type: 'Unauthorized',
-  }
-}
-
 const Session = builder.unionType('Session', {
-  types: [LoggedIn, Unauthorized],
+  types: [Authenticated, Unauthenticated],
   resolveType: ({ type }) => {
     switch (type) {
-      case 'LoggedIn':
-        return LoggedIn
-      case 'Unauthorized':
-        return Unauthorized
+      case 'Authenticated':
+        return Authenticated
+      case 'Unauthenticated':
+        return Unauthenticated
     }
   },
 })
@@ -185,11 +46,11 @@ LogInError.implement({
 })
 
 const LogInResponse = builder.unionType('LogInResponse', {
-  types: [LoggedIn, LogInError],
+  types: [Authenticated, LogInError],
   resolveType: ({ type }) => {
     switch (type) {
-      case 'LoggedIn':
-        return LoggedIn
+      case 'Authenticated':
+        return Authenticated
       case 'LogInError':
         return LogInError
     }
@@ -264,9 +125,9 @@ builder.mutationField('login', t =>
       try {
         const user = await authenticate(username, password, res, prisma)
         return {
-          type: 'LoggedIn',
+          type: 'Authenticated',
           userId: user.id,
-        } as ILoggedIn
+        } as IAuthenticated
       } catch (e) {
         return {
           type: 'LogInError',
@@ -294,7 +155,7 @@ builder.mutationField('logout', t =>
       loggedIn: true,
     },
     resolve: async (_, _args, { res, session }) => {
-      if (session.type === 'Unauthorized') {
+      if (session.type === 'Unauthenticated') {
         return {
           type: 'LoggedOut',
           message: 'Already logged out',
