@@ -2,7 +2,7 @@ module Query = %relay(`
   query SelectedPostQuery($id: ID!) {
     node(id: $id) @required(action: THROW) {
       ... on Post {
-        ...Post_post
+        ...PostDetails_post
       }
     }
   }
@@ -12,5 +12,5 @@ module Query = %relay(`
 let make = (~id) => {
   let {node} = Query.use(~variables={id: id}, ())
 
-  <Post post=node.fragmentRefs />
+  <PostDetails post=node.fragmentRefs />
 }

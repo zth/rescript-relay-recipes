@@ -16,6 +16,9 @@ export const Post = builder.prismaNode('Post', {
     }),
     comments: t.relatedConnection('comments', {
       cursor: 'id',
+      authScopes: {
+        loggedIn: true,
+      },
       query: () => ({
         orderBy: {
           createdAt: 'asc',

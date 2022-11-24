@@ -1,5 +1,5 @@
 module Fragment = %relay(`
-  fragment Post_post on Post {
+  fragment PostDetails_post on Post {
     id
     ...PostTitle_post
     comments @required(action: THROW) {
