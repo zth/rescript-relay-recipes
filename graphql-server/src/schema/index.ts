@@ -2,7 +2,8 @@ import { builder } from './builder'
 import * as Context from './context'
 
 import './auth'
-import './counters'
+import './comment'
+import './post'
 
 builder.queryType()
 builder.mutationType()

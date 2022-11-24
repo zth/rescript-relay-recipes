@@ -3,6 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import Prisma, { PrismaClient } from '@prisma/client'
 import { v4 as uuidv4 } from 'uuid'
 import { builder, prisma } from './builder'
+import { User } from './user'
 
 const ACCESS_TOKEN_SECRET: Secret = 'whatever'
 const REFRESH_TOKEN_SECRET: Secret = 'whateverelse'
@@ -95,15 +96,6 @@ const parseAuthCookies = (cookies: string | undefined) => {
     refreshToken: parsedCookies.get('refreshToken'),
   }
 }
-
-const User = builder.prismaNode('User', {
-  id: {
-    field: 'id',
-  },
-  fields: t => ({
-    username: t.exposeString('username'),
-  }),
-})
 
 type ILoggedIn = {
   type: 'LoggedIn'
@@ -298,6 +290,9 @@ LoggedOut.implement({
 builder.mutationField('logout', t =>
   t.field({
     type: LoggedOut,
+    authScopes: {
+      loggedIn: true,
+    },
     resolve: async (_, _args, { res, session }) => {
       if (session.type === 'Unauthorized') {
         return {

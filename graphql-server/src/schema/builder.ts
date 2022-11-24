@@ -1,4 +1,5 @@
 import SchemaBuilder from '@pothos/core'
+import ErrorsPlugin from '@pothos/plugin-errors'
 import ScopeAuthPlugin from '@pothos/plugin-scope-auth'
 import PrismaPlugin from '@pothos/plugin-prisma'
 import { PrismaClient } from '@prisma/client'
@@ -15,9 +16,9 @@ export const builder = new SchemaBuilder<{
   AuthScopes: { loggedIn: boolean }
   DefaultFieldNullability: true
 }>({
-  plugins: [ScopeAuthPlugin, PrismaPlugin, RelayPlugin],
-  prisma: {
-    client: prisma,
+  plugins: [ErrorsPlugin, ScopeAuthPlugin, PrismaPlugin, RelayPlugin],
+  errorOptions: {
+    defaultTypes: [],
   },
   authScopes: async context => ({
     loggedIn: context.session.type === 'LoggedIn',
@@ -30,6 +31,9 @@ export const builder = new SchemaBuilder<{
         },
       })
     },
+  },
+  prisma: {
+    client: prisma,
   },
   defaultFieldNullability: true,
   relayOptions: {
