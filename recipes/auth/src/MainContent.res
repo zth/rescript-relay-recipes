@@ -18,7 +18,7 @@ let make = () => {
 
   <>
     {switch data.session {
-    | #Authenticated(_) => <span> {"Authenticated"->React.string} </span>
+    | #Authenticated(_) => <CreateNewPost />
     | #Unauthenticated(_) => <span> {"Log in to create new posts"->React.string} </span>
     | #UnselectedUnionMember(_) => React.null
     }}
