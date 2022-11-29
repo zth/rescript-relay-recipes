@@ -1,6 +1,6 @@
 module LoginMutation = %relay(`
   mutation UnauthenticatedUserLoginMutation($username: String!, $password: String!) {
-     logIn(username: $username, password: $password) {
+     logIn(input: {username: $username, password: $password}) {
       ... on LoggedIn {
         __typename
       }

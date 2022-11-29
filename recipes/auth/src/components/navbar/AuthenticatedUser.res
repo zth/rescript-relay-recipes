@@ -6,7 +6,7 @@ module Fragment = %relay(`
 
 module LogOutMutation = %relay(`
   mutation AuthenticatedUserLogOutMutation {
-    logout {
+    logOut {
       ... on LoggedOut {
         __typename
       }

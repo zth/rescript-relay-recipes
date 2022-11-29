@@ -8,6 +8,16 @@ type Authenticated {
   user: User
 }
 
+type ChangeUsernameError implements Error {
+  message: String
+}
+
+input ChangeUsernameInput {
+  username: String!
+}
+
+union ChangeUsernameResult = ChangeUsernameError | UsernameChanged
+
 type Comment implements Node {
   commenter: User
   content: String
@@ -20,6 +30,11 @@ type CommentPosted {
 
 type CreatePostError implements Error {
   message: String
+}
+
+input CreatePostInput {
+  content: String!
+  title: String!
 }
 
 union CreatePostResult = CreatePostError | PostCreated
@@ -40,14 +55,20 @@ type LogInError implements Error {
   message: String
 }
 
+input LogInInput {
+  password: String!
+  username: String!
+}
+
 union LoginResult = LogInError | LoggedIn
 
 type Mutation {
-  createPost(content: String!, title: String!): CreatePostResult
-  logIn(password: String!, username: String!): LoginResult
-  logout: LoggedOut
-  postComment(content: String!, postNodeId: ID!): PostCommentResult
-  register(email: String!, password: String!): RegisterResult
+  changeUsername(input: ChangeUsernameInput!): ChangeUsernameResult
+  createPost(input: CreatePostInput!): CreatePostResult
+  logIn(input: LogInInput!): LoginResult
+  logOut: LoggedOut
+  postComment(input: PostCommentInput!): PostCommentResult
+  register(input: RegisterInput!): RegisterResult
 }
 
 interface Node {
@@ -71,6 +92,11 @@ type Post implements Node {
 
 type PostCommentError implements Error {
   message: String
+}
+
+input PostCommentInput {
+  content: String!
+  postNodeId: ID!
 }
 
 union PostCommentResult = CommentPosted | PostCommentError
@@ -110,6 +136,11 @@ type Registered {
   user: User!
 }
 
+input RegisterInput {
+  password: String!
+  username: String!
+}
+
 union RegisterResult = Registered | RegistrationError
 
 type RegistrationError implements Error {
@@ -125,5 +156,9 @@ type Unauthenticated {
 type User implements Node {
   id: ID!
   username: String
+}
+
+type UsernameChanged {
+  user: User!
 }
 
