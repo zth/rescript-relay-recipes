@@ -17,7 +17,7 @@ export const Post = builder.prismaNode('Post', {
     comments: t.relatedConnection('comments', {
       cursor: 'id',
       authScopes: {
-        loggedIn: true,
+        authenticated: true,
       },
       query: () => ({
         orderBy: {
@@ -62,7 +62,7 @@ builder.mutationFields(t => ({
     },
     args: { title: t.arg.string({ required: true }), content: t.arg.string({ required: true }) },
     authScopes: {
-      loggedIn: true,
+      authenticated: true,
     },
     resolve: async (_, { title, content }, { session }) => {
       if (session.type === 'Authenticated') {

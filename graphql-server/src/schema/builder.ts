@@ -13,7 +13,7 @@ export const prisma = new PrismaClient({})
 export const builder = new SchemaBuilder<{
   PrismaTypes: PrismaTypes
   Context: Context
-  AuthScopes: { loggedIn: boolean }
+  AuthScopes: { authenticated: boolean }
   DefaultFieldNullability: true
 }>({
   plugins: [ErrorsPlugin, ScopeAuthPlugin, PrismaPlugin, RelayPlugin],
@@ -21,7 +21,7 @@ export const builder = new SchemaBuilder<{
     defaultTypes: [],
   },
   authScopes: async context => ({
-    loggedIn: context.session.type === 'Authenticated',
+    authenticated: context.session.type === 'Authenticated',
   }),
   scopeAuthOptions: {
     unauthorizedError: () => {

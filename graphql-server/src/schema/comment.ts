@@ -45,7 +45,7 @@ builder.mutationFields(t => ({
       content: t.arg.string({ required: true }),
     },
     authScopes: {
-      loggedIn: true,
+      authenticated: true,
     },
     resolve: async (_, { postNodeId, content }, { session }) => {
       if (session.type === 'Authenticated') {
