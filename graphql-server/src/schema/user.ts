@@ -10,6 +10,12 @@ export const User = builder.prismaNode('User', {
   }),
 })
 
+const ChangeUsernameInput = builder.inputType('ChangeUsernameInput', {
+  fields: t => ({
+    username: t.string({ required: true }),
+  }),
+})
+
 class ChangeUsernameError extends Error {}
 builder.objectType(ChangeUsernameError, {
   name: 'ChangeUsernameError',
@@ -19,8 +25,8 @@ builder.objectType(ChangeUsernameError, {
   }),
 })
 
-builder.mutationFields(t => ({
-  changeUsername: t.field({
+builder.mutationField('changeUsername', t =>
+  t.field({
     type: User,
     errors: {
       union: {
@@ -35,12 +41,12 @@ builder.mutationFields(t => ({
       types: [ChangeUsernameError],
     },
     args: {
-      username: t.arg.string({ required: true }),
+      input: t.arg({ type: ChangeUsernameInput, required: true }),
     },
     authScopes: {
       authenticated: true,
     },
-    resolve: async (_, { username }, { session }) => {
+    resolve: async (_, { input: { username } }, { session }) => {
       if (session.type === 'Authenticated') {
         return prisma.user.update({
           where: {
@@ -52,5 +58,5 @@ builder.mutationFields(t => ({
         })
       }
     },
-  }),
-}))
+  })
+)

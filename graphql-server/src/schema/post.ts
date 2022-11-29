@@ -36,6 +36,13 @@ builder.queryFields(t => ({
   }),
 }))
 
+const CreatePostInput = builder.inputType('CreatePostInput', {
+  fields: t => ({
+    title: t.string({ required: true }),
+    content: t.string({ required: true }),
+  }),
+})
+
 class CreatePostError extends Error {}
 builder.objectType(CreatePostError, {
   name: 'CreatePostError',
@@ -45,8 +52,8 @@ builder.objectType(CreatePostError, {
   }),
 })
 
-builder.mutationFields(t => ({
-  createPost: t.field({
+builder.mutationField('createPost', t =>
+  t.field({
     type: Post,
     errors: {
       union: {
@@ -60,11 +67,11 @@ builder.mutationFields(t => ({
       },
       types: [CreatePostError],
     },
-    args: { title: t.arg.string({ required: true }), content: t.arg.string({ required: true }) },
+    args: { input: t.arg({ type: CreatePostInput, required: true }) },
     authScopes: {
       authenticated: true,
     },
-    resolve: async (_, { title, content }, { session }) => {
+    resolve: async (_, { input: { title, content } }, { session }) => {
       if (session.type === 'Authenticated') {
         return prisma.post.create({
           data: {
@@ -75,5 +82,5 @@ builder.mutationFields(t => ({
         })
       }
     },
-  }),
-}))
+  })
+)

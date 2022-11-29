@@ -16,6 +16,13 @@ export const Comment = builder.prismaNode('Comment', {
   }),
 })
 
+const PostCommentInput = builder.inputType('PostCommentInput', {
+  fields: t => ({
+    postNodeId: t.globalID({ required: true }),
+    content: t.string({ required: true }),
+  }),
+})
+
 class PostCommentError extends Error {}
 builder.objectType(PostCommentError, {
   name: 'PostCommentError',
@@ -25,8 +32,8 @@ builder.objectType(PostCommentError, {
   }),
 })
 
-builder.mutationFields(t => ({
-  postComment: t.field({
+builder.mutationField('postComment', t =>
+  t.field({
     type: Comment,
     errors: {
       union: {
@@ -41,13 +48,12 @@ builder.mutationFields(t => ({
       types: [PostCommentError],
     },
     args: {
-      postNodeId: t.arg.globalID({ required: true }),
-      content: t.arg.string({ required: true }),
+      input: t.arg({ type: PostCommentInput, required: true }),
     },
     authScopes: {
       authenticated: true,
     },
-    resolve: async (_, { postNodeId, content }, { session }) => {
+    resolve: async (_, { input: { postNodeId, content } }, { session }) => {
       if (session.type === 'Authenticated') {
         return prisma.comment.create({
           data: {
@@ -58,5 +64,5 @@ builder.mutationFields(t => ({
         })
       }
     },
-  }),
-}))
+  })
+)

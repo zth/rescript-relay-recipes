@@ -37,6 +37,13 @@ builder.queryField('session', t =>
   })
 )
 
+const RegisterInput = builder.inputType('RegisterInput', {
+  fields: t => ({
+    username: t.string({ required: true }),
+    password: t.string({ required: true }),
+  }),
+})
+
 class RegistrationError extends Error {}
 builder.objectType(RegistrationError, {
   name: 'RegistrationError',
@@ -49,7 +56,7 @@ builder.objectType(RegistrationError, {
 builder.mutationField('register', t =>
   t.field({
     type: User,
-    args: { email: t.arg.string({ required: true }), password: t.arg.string({ required: true }) },
+    args: { input: t.arg({ type: RegisterInput, required: true }) },
     errors: {
       union: {
         name: 'RegisterResult',
@@ -62,15 +69,22 @@ builder.mutationField('register', t =>
       },
       types: [RegistrationError],
     },
-    resolve: async (_, { email, password }, { res }) => {
+    resolve: async (_, { input: { username, password } }, { res }) => {
       try {
-        return await register(email, password, res, prisma)
+        return await register(username, password, res, prisma)
       } catch (e) {
         throw new RegistrationError(`Error registering`)
       }
     },
   })
 )
+
+const LogInInput = builder.inputType('LogInInput', {
+  fields: t => ({
+    username: t.string({ required: true }),
+    password: t.string({ required: true }),
+  }),
+})
 
 class LogInError extends Error {}
 builder.objectType(LogInError, {
@@ -84,10 +98,7 @@ builder.objectType(LogInError, {
 builder.mutationField('logIn', t =>
   t.field({
     type: User,
-    args: {
-      username: t.arg.string({ required: true }),
-      password: t.arg.string({ required: true }),
-    },
+    args: { input: t.arg({ type: LogInInput, required: true }) },
     errors: {
       union: {
         name: 'LoginResult',
@@ -100,7 +111,7 @@ builder.mutationField('logIn', t =>
       },
       types: [LogInError],
     },
-    resolve: async (_, { username, password }, { res }) => {
+    resolve: async (_, { input: { username, password } }, { res }) => {
       const result = await authenticate(username, password, res, prisma)
 
       if (result.type === 'Authenticated') {
@@ -122,7 +133,7 @@ LoggedOut.implement({
   fields: t => ({ message: t.exposeString('message') }),
 })
 
-builder.mutationField('logout', t =>
+builder.mutationField('logOut', t =>
   t.field({
     type: LoggedOut,
     resolve: async (_, _args, { res, session }) => {
