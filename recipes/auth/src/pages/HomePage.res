@@ -1,5 +1,5 @@
 module Query = %relay(`
-  query MainContentQuery {
+  query HomePageQuery {
     session @required(action: THROW) {
       ... on Authenticated {
         __typename
@@ -8,7 +8,7 @@ module Query = %relay(`
         __typename
       }
     }
-    ...Posts_query
+    ...AllPosts_query
   }
 `)
 
@@ -22,6 +22,6 @@ let make = () => {
     | #Unauthenticated(_) => <span> {"Log in to create new posts"->React.string} </span>
     | #UnselectedUnionMember(_) => React.null
     }}
-    <Posts posts=data.fragmentRefs />
+    <AllPosts posts=data.fragmentRefs />
   </>
 }

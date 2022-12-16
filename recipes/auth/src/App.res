@@ -4,7 +4,7 @@ let make = () => {
     <NavBar />
     <hr />
     <React.Suspense fallback={"Loading..."->React.string}>
-      <MainContent />
+      <Routes />
     </React.Suspense>
   </div>
 }
