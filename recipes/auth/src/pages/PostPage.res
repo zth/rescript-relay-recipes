@@ -1,5 +1,5 @@
 module Query = %relay(`
-  query SelectedPostQuery($id: ID!) {
+  query PostPageQuery($id: ID!) {
     node(id: $id) @required(action: THROW) {
       ... on Post {
         ...PostDetails_post
