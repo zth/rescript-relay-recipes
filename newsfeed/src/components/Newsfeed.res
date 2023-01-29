@@ -1,8 +1,6 @@
-import * as React from "react";
-import Story from "./Story";
-
-export default function Newsfeed() {
-  const story = {
+@react.component
+let make = () => {
+  let story: Story.story = {
     title: "Placeholder Story",
     summary: "Placeholder data, to be replaced with data fetched via GraphQL",
     poster: {
@@ -14,11 +12,9 @@ export default function Newsfeed() {
     thumbnail: {
       url: "/assets/placeholder.jpeg",
     },
-  };
+  }
 
-  return (
-    <div className="newsfeed">
-      <Story story={story} />
-    </div>
-  );
+  <div className="newsfeed">
+    <Story story={story} />
+  </div>
 }
